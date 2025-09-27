@@ -19,6 +19,7 @@
 
 package org.lsposed.manager.ui.fragment;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -104,25 +105,57 @@ public class AppManagementFragment extends Fragment implements AppManagementAdap
         
         CompletableFuture.runAsync(() -> {
             try {
+                // 检查LSPosed服务状态
+                if (!ConfigManager.isBinderAlive()) {
+                    throw new RuntimeException("LSPosed服务未运行，请重启LSPosed");
+                }
+                
                 // 获取所有已安装的应用
                 List<PackageInfo> packages = ConfigManager.getInstalledPackagesFromAllUsers(
                     PackageManager.GET_META_DATA | PackageManager.GET_ACTIVITIES, false);
                 
+                if (packages == null || packages.isEmpty()) {
+                    throw new RuntimeException("无法获取应用列表，请检查权限");
+                }
+                
                 appList.clear();
+                Context context = getContext();
+                if (context == null) {
+                    throw new RuntimeException("上下文已失效");
+                }
+                
+                PackageManager pm = context.getPackageManager();
+                String currentPackageName = context.getPackageName();
+                
                 for (PackageInfo pkg : packages) {
-                    ApplicationInfo appInfo = pkg.applicationInfo;
-                    if (appInfo != null && !appInfo.packageName.equals(getContext().getPackageName())) {
-                        AppInfo app = new AppInfo();
-                        app.packageName = appInfo.packageName;
-                        app.label = appInfo.loadLabel(getContext().getPackageManager()).toString();
-                        app.icon = appInfo.loadIcon(getContext().getPackageManager());
-                        app.isSystemApp = (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-                        app.isEnabled = appInfo.enabled;
-                        app.versionCode = pkg.versionCode;
-                        app.versionName = pkg.versionName;
-                        app.installTime = pkg.firstInstallTime;
-                        app.updateTime = pkg.lastUpdateTime;
-                        appList.add(app);
+                    try {
+                        ApplicationInfo appInfo = pkg.applicationInfo;
+                        if (appInfo != null && !appInfo.packageName.equals(currentPackageName)) {
+                            AppInfo app = new AppInfo();
+                            app.packageName = appInfo.packageName;
+                            
+                            // 安全地加载应用标签和图标
+                            CharSequence label = appInfo.loadLabel(pm);
+                            app.label = label != null ? label.toString() : appInfo.packageName;
+                            
+                            try {
+                                app.icon = appInfo.loadIcon(pm);
+                            } catch (Exception e) {
+                                // 如果加载图标失败，使用默认图标
+                                app.icon = context.getDrawable(android.R.drawable.sym_def_app_icon);
+                            }
+                            
+                            app.isSystemApp = (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+                            app.isEnabled = appInfo.enabled;
+                            app.versionCode = pkg.versionCode;
+                            app.versionName = pkg.versionName != null ? pkg.versionName : "";
+                            app.installTime = pkg.firstInstallTime;
+                            app.updateTime = pkg.lastUpdateTime;
+                            appList.add(app);
+                        }
+                    } catch (Exception e) {
+                        // 跳过有问题的应用包，继续处理其他应用
+                        android.util.Log.w("AppManagement", "跳过应用包: " + pkg.packageName, e);
                     }
                 }
                 
@@ -136,12 +169,33 @@ public class AppManagementFragment extends Fragment implements AppManagementAdap
                 });
                 
             } catch (Exception e) {
+                android.util.Log.e("AppManagement", "加载应用失败", e);
                 requireActivity().runOnUiThread(() -> {
                     binding.progressBar.setVisibility(View.GONE);
-                    Toast.makeText(requireContext(), "加载应用失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    String errorMsg = getErrorMessage(e);
+                    showRetryDialog(errorMsg);
                 });
             }
         });
+    }
+    
+    private String getErrorMessage(Exception e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return "加载应用失败，请重试";
+        }
+        
+        if (message.contains("LSPosed服务未运行")) {
+            return "LSPosed服务未运行，请重启LSPosed模块";
+        } else if (message.contains("无法获取应用列表")) {
+            return "无法获取应用列表，请检查LSPosed权限";
+        } else if (message.contains("上下文已失效")) {
+            return "页面已失效，请重新打开";
+        } else if (message.contains("RemoteException")) {
+            return "服务连接失败，请重启LSPosed";
+        } else {
+            return "加载应用失败: " + message;
+        }
     }
 
     private void filterApps() {
@@ -158,6 +212,20 @@ public class AppManagementFragment extends Fragment implements AppManagementAdap
             }
         }
         adapter.updateApps(filteredAppList);
+        
+        // 显示或隐藏空状态
+        if (filteredAppList.isEmpty()) {
+            if (appList.isEmpty()) {
+                binding.emptyState.setText("没有找到已安装的应用");
+            } else {
+                binding.emptyState.setText("没有找到匹配的应用");
+            }
+            binding.emptyState.setVisibility(View.VISIBLE);
+            binding.recyclerView.setVisibility(View.GONE);
+        } else {
+            binding.emptyState.setVisibility(View.GONE);
+            binding.recyclerView.setVisibility(View.VISIBLE);
+        }
     }
 
     private void showAddAppDialog() {
@@ -203,6 +271,18 @@ public class AppManagementFragment extends Fragment implements AppManagementAdap
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    
+    /**
+     * 显示重试对话框
+     */
+    private void showRetryDialog(String errorMessage) {
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle("加载失败")
+            .setMessage(errorMessage)
+            .setPositiveButton("重试", (dialog, which) -> loadApps())
+            .setNegativeButton("取消", null)
+            .show();
     }
 
     @Override

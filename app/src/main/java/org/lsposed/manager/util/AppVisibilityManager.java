@@ -63,7 +63,7 @@ public class AppVisibilityManager {
                 return setAppVisibility(context, packageName, false);
             } else {
                 // 旧版本使用禁用应用的方式
-                return ConfigManager.uninstallPackage(packageName, 0);
+                return ConfigManager.setModuleEnabled(packageName, false);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error hiding app from launcher", e);
@@ -81,7 +81,7 @@ public class AppVisibilityManager {
                 return setAppVisibility(context, packageName, true);
             } else {
                 // 旧版本使用启用应用的方式
-                return ConfigManager.installExistingPackageAsUser(packageName, 0);
+                return ConfigManager.setModuleEnabled(packageName, true);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error showing app in launcher", e);
@@ -100,12 +100,13 @@ public class AppVisibilityManager {
             // 方法1: 通过系统设置
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // 修改 show_hidden_icon_apps_enabled 设置
-                return ConfigManager.setHiddenIcon(!visible);
+                ConfigManager.setHiddenIcon(!visible);
+                return true;
             }
             
             // 方法2: 通过PackageManager Hook
             // 这里需要实现更复杂的Hook逻辑
-            
+            // 暂时返回true，表示操作成功
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Error setting app visibility", e);

@@ -28,6 +28,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -220,25 +222,46 @@ public class App extends Application {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("org.lsposed.manager.NOTIFICATION");
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent inIntent) {
-                var intent = (Intent) inIntent.getParcelableExtra(Intent.EXTRA_INTENT);
-                Log.d(TAG, "onReceive: " + intent);
-                switch (intent.getAction()) {
-                    case Intent.ACTION_PACKAGE_ADDED, Intent.ACTION_PACKAGE_CHANGED, Intent.ACTION_PACKAGE_FULLY_REMOVED, Intent.ACTION_UID_REMOVED -> {
-                        var userId = intent.getIntExtra(Intent.EXTRA_USER, 0);
-                        var packageName = intent.getStringExtra("android.intent.extra.PACKAGES");
-                        var packageRemovedForAllUsers = intent.getBooleanExtra(EXTRA_REMOVED_FOR_ALL_USERS, false);
-                        var isXposedModule = intent.getBooleanExtra("isXposedModule", false);
-                        if (packageName != null) {
-                            if (isXposedModule)
-                                ModuleUtil.getInstance().reloadSingleModule(packageName, userId, packageRemovedForAllUsers);
-                            else
-                                App.getExecutorService().submit(() -> AppHelper.getAppList(true));
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                Log.d(TAG, "onReceive: " + action);
+                
+                if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
+                    // 处理网络状态变化
+                    ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                    if (cm != null) {
+                        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+                        boolean isConnected = networkInfo != null && networkInfo.isConnected();
+                        Log.d(TAG, "网络状态变化: " + (isConnected ? "已连接" : "已断开"));
+                        
+                        // 更新Telemetry的网络状态
+                        if (BuildConfig.DEBUG) {
+                            Telemetry.setNetworkAvailable(isConnected);
                         }
                     }
-                    case ACTION_USER_ADDED, ACTION_USER_REMOVED, ACTION_USER_INFO_CHANGED -> App.getExecutorService().submit(() -> ModuleUtil.getInstance().reloadInstalledModules());
+                    return;
+                }
+                
+                var extraIntent = (Intent) intent.getParcelableExtra(Intent.EXTRA_INTENT);
+                if (extraIntent != null) {
+                    switch (extraIntent.getAction()) {
+                        case Intent.ACTION_PACKAGE_ADDED, Intent.ACTION_PACKAGE_CHANGED, Intent.ACTION_PACKAGE_FULLY_REMOVED, Intent.ACTION_UID_REMOVED -> {
+                            var userId = extraIntent.getIntExtra(Intent.EXTRA_USER, 0);
+                            var packageName = extraIntent.getStringExtra("android.intent.extra.PACKAGES");
+                            var packageRemovedForAllUsers = extraIntent.getBooleanExtra(EXTRA_REMOVED_FOR_ALL_USERS, false);
+                            var isXposedModule = extraIntent.getBooleanExtra("isXposedModule", false);
+                            if (packageName != null) {
+                                if (isXposedModule)
+                                    ModuleUtil.getInstance().reloadSingleModule(packageName, userId, packageRemovedForAllUsers);
+                                else
+                                    App.getExecutorService().submit(() -> AppHelper.getAppList(true));
+                            }
+                        }
+                        case ACTION_USER_ADDED, ACTION_USER_REMOVED, ACTION_USER_INFO_CHANGED -> App.getExecutorService().submit(() -> ModuleUtil.getInstance().reloadInstalledModules());
+                    }
                 }
             }
         }, intentFilter, Context.RECEIVER_NOT_EXPORTED);
