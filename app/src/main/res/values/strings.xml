@@ -253,6 +253,7 @@
 
     <!-- App Management -->
     <string name="app_management">应用管理</string>
+    <string name="app_management_summary">管理已安装应用，启动、显示/隐藏桌面图标</string>
     <string name="launch">启动</string>
     <string name="toggle_visibility">显示/隐藏</string>
     <string name="info">信息</string>

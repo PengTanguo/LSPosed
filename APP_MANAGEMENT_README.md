@@ -29,6 +29,7 @@
 app/src/main/java/org/lsposed/manager/
 ├── ui/fragment/AppManagementFragment.java          # 主界面Fragment
 ├── adapters/AppManagementAdapter.java              # 应用列表适配器
+├── util/AppInfo.java                               # 应用信息数据类
 └── util/AppVisibilityManager.java                  # 应用可见性管理器
 
 app/src/main/res/
@@ -158,6 +159,13 @@ boolean success = AppVisibilityManager.showAppInLauncher(context, packageName);
 2. **隐藏功能无效** - 确认系统版本和权限
 3. **启动失败** - 检查应用是否已安装
 4. **搜索无结果** - 确认搜索关键词正确
+5. **编译错误** - 已修复AppHelper.AppInfo类不存在的问题，现在使用独立的AppInfo类
+
+### 已修复的问题
+
+- ✅ **编译错误修复** - 创建了独立的`AppInfo`类替代不存在的`AppHelper.AppInfo`
+- ✅ **类型安全** - 所有类型引用已正确更新
+- ✅ **导入修复** - 所有import语句已正确配置
 
 ### 调试方法
 

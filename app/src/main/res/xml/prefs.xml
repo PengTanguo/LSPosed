@@ -143,10 +143,17 @@
         android:key="settings_group_system"
         android:title="@string/settings_group_system"
         app:isPreferenceVisible="@bool/show_system_settings">
+        
+        <Preference
+            android:icon="@drawable/ic_outline_android_24"
+            android:key="app_management"
+            android:summary="@string/app_management_summary"
+            android:title="@string/app_management" />
+            
         <rikka.material.preference.MaterialSwitchPreference
             android:defaultValue="true"
             android:enabled="false"
-            android:icon="@drawable/ic_outline_android_24"
+            android:icon="@drawable/ic_visibility"
             android:key="show_hidden_icon_apps_enabled"
             android:persistent="false"
             android:summary="@string/settings_show_hidden_icon_apps_enabled_summary"

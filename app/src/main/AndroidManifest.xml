@@ -57,6 +57,12 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
+        <activity
+            android:name=".ui.activity.AppManagementActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.activity.MainActivity"
+            android:theme="@style/AppTheme" />
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

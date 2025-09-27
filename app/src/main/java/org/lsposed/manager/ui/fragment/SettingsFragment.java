@@ -21,6 +21,7 @@ package org.lsposed.manager.ui.fragment;
 
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -48,6 +49,7 @@ import org.lsposed.manager.R;
 import org.lsposed.manager.databinding.FragmentSettingsBinding;
 import org.lsposed.manager.repo.RepoLoader;
 import org.lsposed.manager.ui.activity.MainActivity;
+import org.lsposed.manager.ui.activity.AppManagementActivity;
 import org.lsposed.manager.util.BackupUtils;
 import org.lsposed.manager.util.CloudflareDNS;
 import org.lsposed.manager.util.LangList;
@@ -361,6 +363,17 @@ public class SettingsFragment extends BaseFragment {
                 } else {
                     translation_contributors.setSummary(translators);
                 }
+            }
+
+            // 应用管理入口
+            Preference appManagement = findPreference("app_management");
+            if (appManagement != null) {
+                appManagement.setOnPreferenceClickListener(preference -> {
+                    // 启动应用管理Activity
+                    Intent intent = new Intent(requireContext(), AppManagementActivity.class);
+                    startActivity(intent);
+                    return true;
+                });
             }
             SimpleMenuPreference channel = findPreference("update_channel");
             if (channel != null) {
