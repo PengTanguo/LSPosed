@@ -1,0 +1,15 @@
+<libraries>
+  <library
+      name=":@@:libxposed:api::debug"
+      jars="/Users/admin/jason/LSPosed/libxposed/api/build/.transforms/e27145e52c4b8c60b448e24c36af9c3a/transformed/out/jars/classes.jar"
+      resolved="io.github.libxposed:api:unspecified"
+      folder="/Users/admin/jason/LSPosed/libxposed/api/build/.transforms/e27145e52c4b8c60b448e24c36af9c3a/transformed/out"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+</libraries>

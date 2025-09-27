@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.2.1" type="conditional_incidents">
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 29">
+        <fix-replace
+            description="Delete @RequiresApi"
+            replacement="">
+            <range
+                file="${:libxposed:api*debug*MAIN*sourceProvider*0*javaDir*0}/io/github/libxposed/api/XposedModuleInterface.java"
+                startOffset="1704"
+                endOffset="1739"/>
+        </fix-replace>
+        <location
+            file="${:libxposed:api*debug*MAIN*sourceProvider*0*javaDir*0}/io/github/libxposed/api/XposedModuleInterface.java"
+            line="72"
+            column="9"
+            startOffset="1704"
+            endLine="72"
+            endColumn="44"
+            endOffset="1739"/>
+        <map>
+            <condition minGE="fffffffff0000000"/>
+        </map>
+    </incident>
+
+</incidents>
